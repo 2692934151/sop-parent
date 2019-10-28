@@ -1,0 +1,146 @@
+<html>
+<head>
+    <!--    <script src="https://www.googletagservices.com/activeview/js/current/osd.js?cb=%2Fr20100101"></script>-->
+    <meta charset="utf-8">
+    <title>文档中心</title>
+    <link rel="stylesheet" href="/css/bao/app.df4bbf8f.css" type="text/css">
+    <link rel="stylesheet" href="/css/bao/chunk-0104b3c6.084187f0.css" type="text/css">
+    <link rel="stylesheet" href="/css/bao/chunk-4fb2a5b0.5bd702d0.css" type="text/css">
+    <!--    <link rel="stylesheet" href="/css/lib/iview.css" type="text/css">-->
+    <link rel="stylesheet" href="/css/common/app.css">
+    <script src="/js/lib/vue.js"></script>
+    <link rel="stylesheet" href="/dist/styles/iview.css">
+    <script src="/dist/iview.js"></script>
+    <!--    <script src="/public/css/lib/iview.js"></script>-->
+    <script src="/js/lib/axios.js"></script>
+</head>
+<div id="app">
+    <div class="page-view">
+        <div class="page-doc">
+            <section class="page-doc-api page-doc-item">
+                <!--                前段导航栏-->
+                <Card>
+                    <p slot="title" style="margin-bottom:10px ">
+                        <i-select v-model="projectDefault.projectName"
+                                  style="width:200px;z-index: 99999;position: fixed;">
+                            <i-option v-for="item in projects" :value="item.projectName" :key="item.projectId">
+                                {{item.projectName}}
+                            </i-option>
+                        </i-select>
+                    </p>
+                    <p>
+                        <i-menu class="menu-item">
+                            <Submenu v-for="(item,index) in InterfaceAndMenu" :key="index" :name="item.id">
+                                <template slot="title">
+                                    {{item.name}}
+                                </template>
+                                <menu-item v-for="(son,index) in item.list" @click.native="getInterface(son.id)" :key="index" :name="son.id">{{son.title}}
+                                </menu-item>
+                            </Submenu>
+                        </i-menu>
+                    </p>
+                </Card>
+                <!--                内容栏-->
+                <section class="doc__content">
+                    <section class="page-api-info">
+                        <div style="position: relative; overflow: hidden;">
+                            <section class="api-info__header">
+                                <div class="api-name"><h2 class="api-code">
+                                    {{interfaceDetail.path}}</h2>
+                                    <!--                                    <p>根据分类编码，查询分类所属的TOP5销量的子分类信息</p>-->
+                                </div>
+                                <table class="interface-desc-table">
+                                    <tr v-if="interfaceDetail.title">
+                                        <td>接 口 名：</td>
+                                        <td>{{interfaceDetail.title}}</td>
+                                    </tr>
+                                    <tr v-if="interfaceDetail.tag">
+                                        <td>版 本 号：</td>
+                                        <td>{{interfaceDetail.tag}}</td>
+                                    </tr>
+                                </table>
+                                <div class="api-type flex flex-space-between"><p class="api-level">基础 (免费使用)</p>
+                                    <p class="api-creat-date">更新时间：{{interfaceDetail.upTime}}</p></div>
+                            </section>
+                            <div class="api-info__content" v-if="interfaceDetail">
+                                <!--                                api请求内容，无json格式-->
+                                <section class="api_context">
+                                    <div class="api-info-block" v-if="interfaceDetail.resBody">
+                                        <h3 class="api-info-block__title">
+                                            <span>请求参数</span><span>
+                                        </span>
+                                        </h3>
+                                        <div class="api-info-block__content open">
+                                            <h4 class="margin-table"><span>headers:</span></h4>
+                                            <i-table class="margin-table" border :columns="headerColumns"
+                                                     :data="interfaceDetail.reqHeader"></i-table>
+                                            <h4 class="margin-table"><span>请求body:</span></h4>
+                                            <i-table class="margin-table" border :columns="reColumns"
+                                                     :data="interfaceDetail.resBody.properties"></i-table>
+                                        </div>
+                                    </div>
+                                    <div class="api-info-block" v-if="interfaceDetail.reqBodyOther">
+                                        <h3 class="api-info-block__title">
+                                            <span>响应参数</span><span>
+                                        </span>
+                                        </h3>
+                                        <div class="api-info-block__content open" >
+                                            <i-table class="margin-table" border :columns="reColumns"
+                                                     :data="interfaceDetail.reqBodyOther.ReDetails"></i-table>
+                                        </div>
+                                    </div>
+                                </section>
+                                <!--                                api含有json格式的内容-->
+                                <section class="api_json_code" v-if="interfaceDetail.desc">
+                                    <div class="api-info-block"><h3 class="api-info-block__title">
+                                        <span>请求示例</span>
+                                    </h3>
+                                        <div class="api-info-block__content open">
+                                            <div class="code-editor"><h3 class="code-editor__header">示例代码</h3>
+                                                <div class="code-editor__body" v-html="interfaceDetail.desc">
+                                                    {{interfaceDetail.desc}}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
+                                <div>
+                                    <div class="api-info-block"><h3 class="api-info-block__title"><span>错误码</span></h3>
+                                        <div class="api-info-block__content open">
+                                            <h4 class="margin-table"><span>公共错误码:</span></h4>
+                                            <i-table class="margin-table" border :columns="headerColumns"
+                                                     :data="interfaceDetail.reqHeader"></i-table>
+                                            <h4 class="margin-table"><span>业务错误码:</span></h4>
+                                            <i-table class="margin-table" border :columns="reColumns"
+                                                     :data="interfaceDetail.resBody.properties"></i-table>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!--                                api变动-->
+                                <div data-v-5279b36a="" class="api-info-block"><h3 class="api-info-block__title"><span>API变动记录</span></h3>
+                                </div>
+                            </div>
+                            <!--                            无内容时加载，友好体验-->
+                            <section id="op-loading" class="op-hide">
+                                <div class="loading-content">
+                                    <div class="ivu-spin ivu-spin-large ivu-spin-fix ivu-spin-show-text">
+                                        <div class="ivu-spin-main"><span class="ivu-spin-dot"></span>
+                                            <div class="ivu-spin-text"><i
+                                                    class="demo-spin-icon-load ivu-icon ivu-icon-ios-loading"
+                                                    style="font-size: 18px;"></i>
+                                                <div>Loading...</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+                    </section>
+                </section>
+            </section>
+        </div>
+    </div>
+</div>
+<script src="/js/common/app.js"></script>
+</body>
+</html>
