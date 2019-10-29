@@ -4,6 +4,8 @@ import com.alibaba.fastjson.JSON;
 import com.gaoyang.sopweb.core.integration.LoadContextIntegration;
 import com.gaoyang.sopweb.model.*;
 import com.gaoyang.sopweb.vo.*;
+import com.jiexun.transaction.common.log.Logger;
+import com.jiexun.transaction.common.log.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -19,6 +21,7 @@ import java.util.*;
  */
 @Service
 public class LoadContextService {
+    private static final Logger LOGGER = LoggerFactory.getLogger(LoadContextService.class);
     @Autowired
     private LoadContextIntegration loadContextIntegration;
     private static List<String> projectTokens = Arrays.asList("7662108c9615f68724ba923e0b4b7e7c909d62341391bc43f7c0b7d4424fd9ff");
@@ -30,12 +33,15 @@ public class LoadContextService {
      * @throws Exception
      */
     public List<ProjectInfoVO> getProject() throws Exception {
+        LOGGER.info("【项目信息开始加载-getProject-service】start");
         ArrayList<ProjectInfoVO> list = new ArrayList<>();
+        LOGGER.info("【项目信息加载-getProject-service】加载项目tokens为={}", projectTokens);
         for (String token : projectTokens) {
             ProjectData project = loadContextIntegration.getProject(token);
             ProjectInfoVO projectInfoVO = getProjectInfoVO(project, token);
             list.add(projectInfoVO);
         }
+        LOGGER.info("【项目信息加载-getProject-service】查询到的项目集合信息为={}", list);
         return list;
     }
 
@@ -50,6 +56,7 @@ public class LoadContextService {
     public List<SonMenuVO> getInterfaceAndMenu(String project_id, String token) throws Exception {
         List<SonMenu> interfaceAndMenu = loadContextIntegration.getInterfaceAndMenu(project_id, token);
         List<SonMenuVO> list=getListSonVO(interfaceAndMenu);
+        LOGGER.info("【获取接口菜单信息-getInterfaceAndMenu-service】查询到的接口菜单信息为={}", list);
         return list;
     }
 
@@ -64,6 +71,7 @@ public class LoadContextService {
     public InterfaceAllVO getIntefaceDetail(String token, String id) throws Exception {
         InterfaceAllData intefaceDetail = loadContextIntegration.getIntefaceDetail(token, id);
         InterfaceAllVO interfaceAllVO = getInterfaceAllVO(intefaceDetail);
+        LOGGER.info("【获取接口菜单信息-getIntefaceDetail-service】查询到的接口详细信息为={}", interfaceAllVO);
         return interfaceAllVO;
     }
 
@@ -127,6 +135,9 @@ public class LoadContextService {
 
     private ResBodyVO getResBodyVO(ResBodyTmp resBodyTmp) {
         ResBodyVO resBodyVO = new ResBodyVO();
+        if(resBodyTmp==null){
+            return resBodyVO;
+        }
         resBodyVO.setSchema(resBodyTmp.$schema);
         resBodyVO.setType(resBodyTmp.getType());
 
@@ -137,8 +148,8 @@ public class LoadContextService {
 
         Map<String, ReDetail> properties = resBodyTmp.getProperties();
         for (String key : properties.keySet()) {
+            ReDetail detail = properties.get(key);
             if(key.startsWith("$ERRORPUBLIC_")){
-                ReDetail detail = properties.get(key);
                 ErrorData errorData = new ErrorData();
                 errorData.setDescription(detail.getDescription());
                 errorData.setDefaultData(detail.getDefaultData());
@@ -146,7 +157,6 @@ public class LoadContextService {
                 errorData.setInterfaceAttr(substring);
                 errorPublic.add(errorData);
             }else if(key.startsWith("$ERRORBUSINESS_")){
-                ReDetail detail = properties.get(key);
                 ErrorData errorData = new ErrorData();
                 errorData.setDescription(detail.getDescription());
                 errorData.setDefaultData(detail.getDefaultData());
@@ -154,7 +164,6 @@ public class LoadContextService {
                 errorData.setInterfaceAttr(substring);
                 errorBusiness.add(errorData);
             }else {
-                ReDetail detail = properties.get(key);
                 detail.setIsMust("非必须");
                 if (required != null && required.contains(key)) {
                     detail.setIsMust("必须");
@@ -171,6 +180,9 @@ public class LoadContextService {
 
     private ReqBodyVO getReqBodyVO(ReqBodyTmp reqBodyTmp) {
         ReqBodyVO reqBodyVO = new ReqBodyVO();
+        if(reqBodyTmp==null){
+            return reqBodyVO;
+        }
         reqBodyVO.setSchema(reqBodyTmp.$schema);
         reqBodyVO.setType(reqBodyTmp.getType());
         List<ReDetail> props = new ArrayList<>();
@@ -178,12 +190,17 @@ public class LoadContextService {
         Map<String, ReDetail> properties = reqBodyTmp.getProperties();
         for (String key : properties.keySet()) {
             ReDetail detail = properties.get(key);
-            detail.setIsMust("非必须");
-            if (required != null && required.contains(key)) {
-                detail.setIsMust("必须");
+            if(key.startsWith("$INTERFACEDESC")){
+                reqBodyVO.setInterfaceDesc(detail.getDescription());
             }
-            detail.setInterfaceAttr(key);
-            props.add(detail);
+            else {
+                detail.setIsMust("非必须");
+                if (required != null && required.contains(key)) {
+                    detail.setIsMust("必须");
+                }
+                detail.setInterfaceAttr(key);
+                props.add(detail);
+            }
         }
         reqBodyVO.setProperties(props);
         return reqBodyVO;

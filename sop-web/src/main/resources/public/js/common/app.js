@@ -36,37 +36,50 @@ var app = new Vue({
         headerColumns: [
             {
                 title: '参数名称',
-                key:'name'
+                key: 'name'
             },
             {
                 title: '参数值',
-                key:'value'
+                key: 'value'
             },
             {
                 title: '是否必须',
-                key:'required'
+                key: 'required'
             },
             {
                 title: '示例',
-                key:'example'
+                key: 'example'
             },
             {
-                title:'备注',
-                key:'desc'
+                title: '备注',
+                key: 'desc'
+            }
+        ],
+        errorColumns: [
+            {
+                title: '错误码',
+                key: 'interfaceAttr'
+            },
+            {
+                title: '错误描述',
+                key: 'description'
+            },
+            {
+                title: '解决方案',
+                key: 'defaultData'
             }
         ]
     },
     created() {
-        let project = this.getProject();
-        // let token = project.token;
-        let token = "7662108c9615f68724ba923e0b4b7e7c909d62341391bc43f7c0b7d4424fd9ff";
-        // let projectId = project.projectId;
-        let projectId = 30;
-        let interfaceId = 53;
-        this.getMenuAndInterface(token, projectId);
-        this.getInterfaceDetail(token, interfaceId);
+        this.init();
     },
     methods: {
+        init() {
+            this.getProject();
+        },
+        turnProject(token,id){
+            this.InterfaceAndMenu(token,id);
+        },
         getProject() {
             axios.get("http://localhost:8083/project/get").then(res => {
                 this.projects = res.data
@@ -83,8 +96,6 @@ var app = new Vue({
                 }
             }).then(res => {
                 this.InterfaceAndMenu = res.data
-                this.menuDefault = res.data[0];
-                this.interfaceDefault = res.data[0].list[0];
             }).catch(function (error) {
                 console.log(error);
             })
@@ -99,11 +110,23 @@ var app = new Vue({
                 .then(res => this.interfaceDetail = res.data)
                 .catch(err => console.log(err))
         },
-        getInterface(msg){
-            console.log(msg);
-            this.getInterfaceDetail("7662108c9615f68724ba923e0b4b7e7c909d62341391bc43f7c0b7d4424fd9ff",msg);
+        getInterface(msg) {
+            this.getInterfaceDetail(this.projectDefault.token, msg);
         }
     },
-    computed: {
+    computed: {},
+    watch:{
+        projectDefault(newValue,oldValue){
+            // console.log(newValue.projectId)
+            let projectId = newValue.projectId;
+            let token = newValue.token;
+            this.getMenuAndInterface(token, projectId);
+        },
+        InterfaceAndMenu(newValue,oldValue){
+            let token = this.projectDefault.token;
+            let interfaceId = newValue[0].list[0].id;
+            this.interfaceDefault=interfaceId;
+            this.getInterfaceDetail(token, interfaceId);
+        }
     }
 })

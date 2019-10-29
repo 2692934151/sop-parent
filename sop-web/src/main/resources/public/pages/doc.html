@@ -19,27 +19,32 @@
         <div class="page-doc">
             <section class="page-doc-api page-doc-item">
                 <!--                前段导航栏-->
-                <Card>
-                    <p slot="title" style="margin-bottom:10px ">
-                        <i-select v-model="projectDefault.projectName"
-                                  style="width:200px;z-index: 99999;position: fixed;">
-                            <i-option v-for="item in projects" :value="item.projectName" :key="item.projectId">
-                                {{item.projectName}}
-                            </i-option>
-                        </i-select>
-                    </p>
-                    <p>
-                        <i-menu class="menu-item">
-                            <Submenu v-for="(item,index) in InterfaceAndMenu" :key="index" :name="item.id">
-                                <template slot="title">
-                                    {{item.name}}
-                                </template>
-                                <menu-item v-for="(son,index) in item.list" @click.native="getInterface(son.id)" :key="index" :name="son.id">{{son.title}}
-                                </menu-item>
-                            </Submenu>
-                        </i-menu>
-                    </p>
-                </Card>
+                <Affix>
+                    <div class="demo-affix">
+                        <Card>
+                            <p slot="title" style="margin-bottom:10px ">
+                                <i-select transfer v-model="projectDefault.projectName"
+                                          style="width:200px;z-index: 99999;position: fixed;">
+                                    <i-option v-for="item in projects" :value="item.projectName" :key="item.projectId"  @click.native="turnProject(item.token,item.projectId)" >
+<!--                                        <span @click="turnProject(item.token,item.projectId)">{{item.projectName}}</span>-->
+                                        {{item.projectName}}
+                                    </i-option>
+                                </i-select>
+                            </p>
+                            <p>
+                                <i-menu class="menu-item" v-if="interfaceDefault" :open-names="[InterfaceAndMenu[0].id] " :active-name="interfaceDefault">
+                                    <Submenu v-for="(item,index) in InterfaceAndMenu" :key="index" :name="item.id">
+                                        <template slot="title">
+                                            {{item.name}}
+                                        </template>
+                                        <menu-item v-for="(son,index) in item.list" @click.native="getInterface(son.id)" :key="index" :name="son.id">{{son.title}}
+                                        </menu-item>
+                                    </Submenu>
+                                </i-menu>
+                            </p>
+                        </Card>
+                    </div>
+                </Affix>
                 <!--                内容栏-->
                 <section class="doc__content">
                     <section class="page-api-info">
@@ -59,6 +64,7 @@
                                         <td>{{interfaceDetail.tag}}</td>
                                     </tr>
                                 </table>
+                                <p class="api-remark" v-if="interfaceDetail.reqBodyOther">{{interfaceDetail.reqBodyOther.interfaceDesc}}</p>
                                 <div class="api-type flex flex-space-between"><p class="api-level">基础 (免费使用)</p>
                                     <p class="api-creat-date">更新时间：{{interfaceDetail.upTime}}</p></div>
                             </section>
@@ -74,9 +80,10 @@
                                             <h4 class="margin-table"><span>headers:</span></h4>
                                             <i-table class="margin-table" border :columns="headerColumns"
                                                      :data="interfaceDetail.reqHeader"></i-table>
+
                                             <h4 class="margin-table"><span>请求body:</span></h4>
-                                            <i-table class="margin-table" border :columns="reColumns"
-                                                     :data="interfaceDetail.resBody.properties"></i-table>
+                                            <i-table class="margin-table" v-if="interfaceDetail.reqBodyOther.properties" border :columns="reColumns"
+                                                     :data="interfaceDetail.reqBodyOther.properties"></i-table>
                                         </div>
                                     </div>
                                     <div class="api-info-block" v-if="interfaceDetail.reqBodyOther">
@@ -85,8 +92,8 @@
                                         </span>
                                         </h3>
                                         <div class="api-info-block__content open" >
-                                            <i-table class="margin-table" border :columns="reColumns"
-                                                     :data="interfaceDetail.reqBodyOther.ReDetails"></i-table>
+                                            <i-table class="margin-table" border :columns="reColumns" v-if="interfaceDetail.resBody.reDetails"
+                                                     :data="interfaceDetail.resBody.reDetails"></i-table>
                                         </div>
                                     </div>
                                 </section>
@@ -108,17 +115,15 @@
                                     <div class="api-info-block"><h3 class="api-info-block__title"><span>错误码</span></h3>
                                         <div class="api-info-block__content open">
                                             <h4 class="margin-table"><span>公共错误码:</span></h4>
-                                            <i-table class="margin-table" border :columns="headerColumns"
-                                                     :data="interfaceDetail.reqHeader"></i-table>
+                                            <i-table class="margin-table" border :columns="errorColumns" v-if="interfaceDetail.resBody.errorPublic"
+                                                     :data="interfaceDetail.resBody.errorPublic"></i-table>
                                             <h4 class="margin-table"><span>业务错误码:</span></h4>
-                                            <i-table class="margin-table" border :columns="reColumns"
-                                                     :data="interfaceDetail.resBody.properties"></i-table>
+                                            <i-table class="margin-table" border :columns="errorColumns" v-if="interfaceDetail.resBody.errorBusiness"
+                                                     :data="interfaceDetail.resBody.errorBusiness"></i-table>
                                         </div>
                                     </div>
                                 </div>
                                 <!--                                api变动-->
-                                <div data-v-5279b36a="" class="api-info-block"><h3 class="api-info-block__title"><span>API变动记录</span></h3>
-                                </div>
                             </div>
                             <!--                            无内容时加载，友好体验-->
                             <section id="op-loading" class="op-hide">
